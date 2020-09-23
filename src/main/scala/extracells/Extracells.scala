@@ -87,6 +87,6 @@ object Extracells {
 
 		proxy.registerItems
 		proxy.registerBlocks
-		integration.preInit
+//		integration.preInit
 	}
 }
