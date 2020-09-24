@@ -4,25 +4,31 @@ import appeng.api.AEApi;
 import appeng.api.config.Actionable;
 import appeng.api.config.RedstoneMode;
 import appeng.api.config.SecurityPermissions;
+import appeng.api.networking.IGridCache;
+import appeng.api.networking.security.MachineSource;
+import appeng.api.networking.storage.IStorageGrid;
 import appeng.api.parts.IPart;
 import appeng.api.parts.IPartCollisionHelper;
 import appeng.api.parts.IPartRenderHelper;
+import appeng.api.storage.IMEMonitor;
 import appeng.api.storage.data.IAEFluidStack;
+import appeng.api.storage.data.IAEItemStack;
 import appeng.api.util.AEColor;
+import appeng.util.Platform;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import extracells.render.TextureManager;
 import extracells.util.PermissionUtil;
+import net.minecraft.block.Block;
 import net.minecraft.client.renderer.RenderBlocks;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.Items;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.IIcon;
 import net.minecraft.util.Vec3;
 import net.minecraftforge.common.util.ForgeDirection;
-import net.minecraftforge.fluids.Fluid;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.FluidTankInfo;
-import net.minecraftforge.fluids.IFluidHandler;
+import net.minecraftforge.fluids.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,9 +52,50 @@ public class PartFluidImport extends PartFluidIO implements IFluidHandler {
 
 	@Override
 	public boolean doWork(int rate, int TicksSinceLastCall) {
-		if (getFacingTank() == null || !isActive())
+		if (!isActive())
 			return false;
 		boolean empty = true;
+
+		if(this.facingInventory != null) {
+			int sizeInventory = this.facingInventory.getSizeInventory();
+			for (int i = 0; i < sizeInventory; i++) {
+				ItemStack item = this.facingInventory.getStackInSlot(i);
+				if (item != null) {
+					if (FluidContainerRegistry.isContainer(item)) {
+						FluidStack fluidFromItem = FluidContainerRegistry.getFluidForFilledItem(item);
+						if (fluidFromItem == null) continue;
+						ItemStack drainFluidContainer = FluidContainerRegistry.drainFluidContainer(item);
+						IAEFluidStack toFill = AEApi.instance().storage().createFluidStack(fluidFromItem);
+						IAEItemStack toInsert = AEApi.instance().storage().createItemStack(drainFluidContainer);
+						IMEMonitor<IAEFluidStack> monitor = getGridBlock().getFluidMonitor();
+						IMEMonitor<IAEItemStack> itemInventory;
+                        //Make sure network monitor can handle new fluid input.
+                        MachineSource actionSource = new MachineSource(this);
+						boolean canInjectFluid = monitor.injectItems(toFill, Actionable.SIMULATE, actionSource) == null;
+						boolean canInjectEmptyContainer = false;
+						try {
+							IStorageGrid cache = getGridNode().getGrid().getCache(IStorageGrid.class);
+							itemInventory = cache.getItemInventory();
+							if (itemInventory != null) {
+								IAEItemStack notInjectedItem = itemInventory.injectItems(toInsert, Actionable.SIMULATE, actionSource);
+								canInjectEmptyContainer = notInjectedItem == null;
+							}
+						} catch (Exception e) {
+							return false;
+						}
+                        if (canInjectFluid && canInjectEmptyContainer) {
+                            monitor.injectItems(toFill, Actionable.MODULATE, actionSource);
+                            this.facingInventory.decrStackSize(i, 1);
+                            //Injected. Remove fluid container.
+							itemInventory.injectItems(toInsert, Actionable.MODULATE, actionSource);
+							return true;
+                        }
+                    }
+				}
+			}
+		}
+
+		if(getFacingTank() == null) return false;
 
 		List<Fluid> filter = new ArrayList<Fluid>();
 		filter.add(this.filterFluids[4]);

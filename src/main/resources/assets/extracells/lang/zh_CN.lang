@@ -46,7 +46,7 @@ extracells.item.storage.casing.physical.name=高级存储外壳
 extracells.item.storage.casing.fluid.name=流体存储外壳
 extracells.item.storage.casing.gas.name=气体存储外壳
 extracells.item.terminal.fluid.wireless.name=无线ME流体终端
-extracells.item.fluid.pattern=ME流体模板[WIP]
+extracells.item.fluid.pattern=ME流体模板
 extracells.item.oc.upgrade.name=ME升级模块
 
 //Creative Tab
@@ -80,7 +80,7 @@ extracells.block.fluidcrafter.name=ME流体装配室
 extracells.block.fluidinterface.name=ME流体接口
 extracells.block.fluidfiller.name=ME流体自动装填器
 tile.extracells.block.vibrantchamberfluid.name=流体谐振仓
-tile.extracells.block.hardmedrive.name=防爆ME驱动器[WIP]
+tile.extracells.block.hardmedrive.name=防爆ME驱动器
 
 //Tooltips and Chat-Messages
 extracells.tooltip.amount=总量

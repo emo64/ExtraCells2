@@ -35,6 +35,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
@@ -59,6 +60,7 @@ public abstract class PartECBase implements IPart, IGridHost, IActionHost,
 	private double powerUsage;
 	private TileEntity hostTile;
 	private IFluidHandler facingTank;
+	protected IInventory facingInventory;
 	private Object facingGasTank;
 	private boolean redstonePowered;
 	private boolean isActive;
@@ -329,6 +331,9 @@ public abstract class PartECBase implements IPart, IGridHost, IActionHost,
 		this.facingTank = null;
 		if (tileEntity instanceof IFluidHandler)
 			this.facingTank = (IFluidHandler) tileEntity;
+		if (tileEntity instanceof IInventory) {
+			this.facingInventory = (IInventory) tileEntity;
+		}
 		if (Integration.Mods.MEKANISMGAS.isEnabled())
 			updateCheckGasTank(tileEntity);
 		this.redstonePowered = world.isBlockIndirectlyGettingPowered(x, y, z)
